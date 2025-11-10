@@ -57,13 +57,40 @@ export default function CreateGreeting() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create greeting");
+        let errorMessage = "Failed to create greeting";
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || errorMessage;
+          // Handle array of errors (from Zod validation)
+          if (Array.isArray(error.error)) {
+            errorMessage = error.error.map((e: any) => e.message || e).join(", ");
+          }
+        } catch (e) {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      return response.json();
+      const greeting = await response.json();
+      
+      // Ensure greeting has an id
+      if (!greeting || !greeting.id) {
+        console.error("Invalid greeting response:", greeting);
+        throw new Error("Server returned invalid response - missing greeting ID");
+      }
+
+      return greeting;
     },
     onSuccess: (greeting) => {
+      if (!greeting?.id) {
+        console.error("Greeting missing ID:", greeting);
+        toast({
+          title: "Error",
+          description: "Received invalid response from server",
+          variant: "destructive",
+        });
+        return;
+      }
       const link = `${window.location.origin}/wish/${greeting.id}`;
       setGeneratedLink(link);
       toast({

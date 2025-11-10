@@ -1,3 +1,11 @@
+// Load dotenv only in local development (not in Replit)
+if (typeof process.env.REPL_ID === 'undefined') {
+  try {
+    await import("dotenv/config");
+  } catch (e) {
+    // dotenv not available, that's okay
+  }
+}
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -71,11 +79,36 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  
+  // Handle errors that may occur during listen (Windows doesn't support reusePort)
+  server.once('error', (e: any) => {
+    if (e.code === 'ENOTSUP' || e.code === 'ERR_INVALID_ARG_TYPE') {
+      // Retry with standard syntax for Windows/local
+      server.listen(port, "0.0.0.0", () => {
+        log(`serving on port ${port}`);
+      });
+    } else {
+      throw e;
+    }
   });
+  
+  // Try Replit's object syntax first (works on Linux/Replit)
+  try {
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+    });
+  } catch (e: any) {
+    // Synchronous error - use standard syntax
+    if (e.code === 'ERR_INVALID_ARG_TYPE' || e.code === 'ENOTSUP') {
+      server.listen(port, "0.0.0.0", () => {
+        log(`serving on port ${port}`);
+      });
+    } else {
+      throw e;
+    }
+  }
 })();

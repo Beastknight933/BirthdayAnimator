@@ -1,3 +1,11 @@
+// Load dotenv only in local development (not in Replit)
+if (typeof process.env.REPL_ID === 'undefined') {
+  try {
+    await import("dotenv/config");
+  } catch (e) {
+    // dotenv not available, that's okay
+  }
+}
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";

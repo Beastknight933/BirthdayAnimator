@@ -2,14 +2,25 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { nanoid } from "nanoid";
 import { storage } from "./storage";
 import { insertGreetingSchema } from "@shared/schema";
 import { z } from "zod";
 
+const uploadsDir = "uploads";
+// Ensure uploads directory exists (silent, works in both Replit and local)
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  // Ignore errors, directory might already exist or be created by multer
+}
+
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, uploadsDir + "/");
   },
   filename: (req, file, cb) => {
     const uniqueName = `${nanoid()}-${Date.now()}${path.extname(file.originalname)}`;
@@ -35,7 +46,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const express = (await import("express")).default;
-  app.use("/uploads", express.static("uploads"));
+  app.use("/uploads", express.static(uploadsDir));
 
   app.post("/api/greetings", upload.array("photos", 12), async (req, res) => {
     try {
