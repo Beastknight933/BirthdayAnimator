@@ -173,6 +173,37 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Ensure PNG images with transparency display correctly */
+  img {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  
+  /* Specific fix for cake images - force transparency */
+  .cake-image-container {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+  
+  .cake-image,
+  img[src*="cake"],
+  div.cake-image {
+    background-color: transparent !important;
+    mix-blend-mode: normal;
+    -webkit-background-clip: padding-box !important;
+    background-clip: padding-box !important;
+    display: block !important;
+    /* Force browser to respect PNG alpha channel */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Ensure background-image respects transparency */
+  div.cake-image[style*="background-image"] {
+    background-color: transparent !important;
+  }
 }
 
 /**

@@ -174,19 +174,19 @@ export default function ViewGreeting() {
         {stage === 1 && (
           <div className="text-center animate-fade-in relative flex flex-col items-center justify-center min-h-[80vh]">
             {/* Cake image */}
-            <div className="mb-12 relative">
-              <img 
-                src={cakeStage >= 2 
-                  ? "/cake-lit.png"
-                  : "/cake-unlit.png"
-                }
-                alt="Birthday Cake"
-                className="w-80 h-80 md:w-96 md:h-96 object-contain mx-auto transition-all duration-500 drop-shadow-2xl"
-                style={{ imageRendering: 'crisp-edges' }}
-                loading="eager"
-                onError={(e) => {
-                  console.error('Failed to load cake image:', e.currentTarget.src);
+            <div className="mb-12 relative cake-image-container inline-block">
+              <div
+                className="w-80 h-80 md:w-96 md:h-96 mx-auto transition-all duration-500 drop-shadow-2xl cake-image"
+                style={{
+                  backgroundImage: `url(${cakeStage >= 2 ? "/cake-lit.png" : "/cake-unlit.png"})`,
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center',
+                  imageRendering: 'crisp-edges',
+                  backgroundColor: 'transparent'
                 }}
+                role="img"
+                aria-label="Birthday Cake"
               />
             </div>
 
