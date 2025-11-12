@@ -4,7 +4,7 @@ import { Volume2, VolumeX, Gift as GiftIcon, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import type { Greeting } from "@shared/schema";
-import { useRoute, Link } from "wouter";
+import { useRoute } from "wouter";
 
 export default function ViewGreeting() {
   const [, params] = useRoute("/wish/:id");
@@ -25,6 +25,7 @@ export default function ViewGreeting() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [confetti, setConfetti] = useState(false);
   const [sparkles, setSparkles] = useState(false);
+  const [decorations, setDecorations] = useState<Array<{id: number, type: string, x: number, y: number, delay: number}>>([]);
 
   useEffect(() => {
     if (stage === 0 && countdown > 0) {
@@ -38,7 +39,20 @@ export default function ViewGreeting() {
   const toggleMusic = () => setMusicPlaying(!musicPlaying);
 
   const decorateCake = () => {
-    setCakeStage(1);
+    // Add decorations with animation delays
+    const newDecorations = [
+      { id: 1, type: 'star', x: 15, y: 20, delay: 0 },
+      { id: 2, type: 'sparkle', x: 85, y: 25, delay: 0.2 },
+      { id: 3, type: 'star', x: 20, y: 60, delay: 0.4 },
+      { id: 4, type: 'sparkle', x: 80, y: 65, delay: 0.6 },
+      { id: 5, type: 'ribbon', x: 50, y: 15, delay: 0.8 },
+      { id: 6, type: 'heart', x: 10, y: 45, delay: 1.0 },
+      { id: 7, type: 'heart', x: 90, y: 50, delay: 1.2 },
+      { id: 8, type: 'confetti', x: 50, y: 75, delay: 1.4 },
+    ];
+    
+    setDecorations(newDecorations);
+    // Don't automatically move to next stage - user clicks button manually
   };
 
   const lightCandle = () => {
@@ -176,7 +190,7 @@ export default function ViewGreeting() {
             {/* Cake image */}
             <div className="mb-12 relative cake-image-container inline-block">
               <div
-                className="w-80 h-80 md:w-96 md:h-96 mx-auto transition-all duration-500 drop-shadow-2xl cake-image"
+                className="w-80 h-80 md:w-96 md:h-96 mx-auto transition-all duration-500 drop-shadow-2xl cake-image relative"
                 style={{
                   backgroundImage: `url(${cakeStage >= 2 ? "/cake-lit.png" : "/cake-unlit.png"})`,
                   backgroundSize: 'contain',
@@ -187,7 +201,25 @@ export default function ViewGreeting() {
                 }}
                 role="img"
                 aria-label="Birthday Cake"
-              />
+              >
+                {/* Decorative elements */}
+                {decorations.map((decoration) => (
+                  <img
+                    key={decoration.id}
+                    src={`/decorations/${decoration.type}.png`}
+                    alt={decoration.type}
+                    className="absolute w-8 h-8 md:w-10 md:h-10 animate-scale-in pointer-events-none"
+                    style={{
+                      left: `${decoration.x}%`,
+                      top: `${decoration.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      animationDelay: `${decoration.delay}s`,
+                      animationFillMode: 'both',
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                    }}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Birthday message (only when candle is lit) */}
@@ -203,8 +235,18 @@ export default function ViewGreeting() {
                 <Button
                   onClick={decorateCake}
                   className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg"
+                  disabled={decorations.length > 0}
                 >
-                  🎨 Decorate
+                  {decorations.length > 0 ? '✨ Decorated!' : '🎨 Decorate'}
+                </Button>
+              )}
+              
+              {cakeStage === 0 && decorations.length > 0 && (
+                <Button
+                  onClick={() => setCakeStage(1)}
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg ml-4"
+                >
+                  Next: Light Candle →
                 </Button>
               )}
               
@@ -381,11 +423,24 @@ export default function ViewGreeting() {
             <p className="text-2xl text-pink-100 mb-8">
               Wishing you the most amazing year ahead, {greeting.recipientName}! 🎉
             </p>
-            <Link href="/">
-              <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg">
-                Create Your Own Wish
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => {
+                // Reset all state to restart the experience
+                setStage(0);
+                setCountdown(3);
+                setShowIntro(false);
+                setCakeStage(0);
+                setBalloons([false, false, false, false]);
+                setRevealedWords([false, false, false, false]);
+                setCurrentPhotoIndex(0);
+                setConfetti(false);
+                setSparkles(false);
+                setDecorations([]);
+              }}
+              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg"
+            >
+              🎂 Watch Again
+            </Button>
           </div>
         )}
       </div>
