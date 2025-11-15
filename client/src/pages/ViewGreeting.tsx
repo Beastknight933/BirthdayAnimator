@@ -1,10 +1,48 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type CSSProperties } from "react";
 import { Volume2, VolumeX, Gift as GiftIcon, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import type { Greeting } from "@shared/schema";
 import { useRoute } from "wouter";
+
+type DecorationType = "balloon-left" | "balloon-right" | "confetti-left" | "confetti-right" | "ribbon";
+
+interface DecorationItem {
+  id: string;
+  type: DecorationType;
+  delay?: number;
+}
+
+const decorationConfig: Record<DecorationType, { src: string; className: string; style?: CSSProperties }> = {
+  "balloon-left": {
+    src: "/decorations/left_balloon-removebg-preview.png",
+    className:
+      "absolute -left-16 md:-left-24 top-1/2 -translate-y-1/2 w-24 h-24 md:w-36 md:h-36 animate-scale-in animate-float pointer-events-none z-10",
+  },
+  "balloon-right": {
+    src: "/decorations/right_balloon-removebg-preview.png",
+    className:
+      "absolute -right-16 md:-right-24 top-1/2 -translate-y-1/2 w-24 h-24 md:w-36 md:h-36 animate-scale-in animate-float pointer-events-none z-10",
+  },
+  "confetti-left": {
+    src: "/decorations/confetti.gif",
+    className:
+      "absolute -left-10 md:-left-16 top-0 h-full md:h-[28rem] w-20 md:w-28 animate-scale-in animate-fade-in pointer-events-none z-0",
+  },
+  "confetti-right": {
+    src: "/decorations/confetti.gif",
+    className:
+      "absolute -right-10 md:-right-16 top-0 h-full md:h-[28rem] w-20 md:w-28 animate-scale-in animate-fade-in pointer-events-none z-0",
+    style: { transform: "scaleX(-1)" },
+  },
+  ribbon: {
+    src: "/decorations/ribbon.png",
+    className:
+      "fixed top-4 md:top-8 left-1/2 -translate-x-1/2 w-48 md:w-72 animate-scale-in animate-slide-up pointer-events-none z-20",
+  },
+};
+
 
 export default function ViewGreeting() {
   const [, params] = useRoute("/wish/:id");
@@ -25,7 +63,7 @@ export default function ViewGreeting() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [confetti, setConfetti] = useState(false);
   const [sparkles, setSparkles] = useState(false);
-  const [decorations, setDecorations] = useState<Array<{id: number, type: string, x: number, y: number, delay: number}>>([]);
+  const [decorations, setDecorations] = useState<DecorationItem[]>([]);
 
   useEffect(() => {
     if (stage === 0 && countdown > 0) {
@@ -39,18 +77,16 @@ export default function ViewGreeting() {
   const toggleMusic = () => setMusicPlaying(!musicPlaying);
 
   const decorateCake = () => {
-    // Add decorations with animation delays
-    const newDecorations = [
-      { id: 1, type: 'star', x: 15, y: 20, delay: 0 },
-      { id: 2, type: 'sparkle', x: 85, y: 25, delay: 0.2 },
-      { id: 3, type: 'star', x: 20, y: 60, delay: 0.4 },
-      { id: 4, type: 'sparkle', x: 80, y: 65, delay: 0.6 },
-      { id: 5, type: 'ribbon', x: 50, y: 15, delay: 0.8 },
-      { id: 6, type: 'heart', x: 10, y: 45, delay: 1.0 },
-      { id: 7, type: 'heart', x: 90, y: 50, delay: 1.2 },
-      { id: 8, type: 'confetti', x: 50, y: 75, delay: 1.4 },
+    if (decorations.length > 0) return;
+
+    const newDecorations: DecorationItem[] = [
+      { id: "balloon-left", type: "balloon-left", delay: 0 },
+      { id: "balloon-right", type: "balloon-right", delay: 0.1 },
+      { id: "confetti-left", type: "confetti-left", delay: 0.2 },
+      { id: "confetti-right", type: "confetti-right", delay: 0.3 },
+      { id: "ribbon", type: "ribbon", delay: 0.4 },
     ];
-    
+
     setDecorations(newDecorations);
     // Don't automatically move to next stage - user clicks button manually
   };
@@ -187,6 +223,28 @@ export default function ViewGreeting() {
         {/* Stage 1: Cake - 4 sub-stages */}
         {stage === 1 && (
           <div className="text-center animate-fade-in relative flex flex-col items-center justify-center min-h-[80vh]">
+            {/* Ribbon decoration - positioned at top of viewport */}
+            {decorations.some(d => d.type === 'ribbon') && (() => {
+              const ribbon = decorations.find(d => d.type === 'ribbon');
+              if (!ribbon) return null;
+              const config = decorationConfig.ribbon;
+              const combinedStyle: CSSProperties = {
+                ...config.style,
+                animationDelay: ribbon.delay !== undefined ? `${ribbon.delay}s` : undefined,
+              };
+              return (
+                <img
+                  key={ribbon.id}
+                  src={config.src}
+                  alt=""
+                  className={config.className}
+                  style={combinedStyle}
+                  loading="eager"
+                  aria-hidden="true"
+                />
+              );
+            })()}
+            
             {/* Cake image */}
             <div className="mb-12 relative cake-image-container inline-block">
               <div
@@ -202,23 +260,31 @@ export default function ViewGreeting() {
                 role="img"
                 aria-label="Birthday Cake"
               >
-                {/* Decorative elements */}
-                {decorations.map((decoration) => (
-                  <img
-                    key={decoration.id}
-                    src={`/decorations/${decoration.type}.png`}
-                    alt={decoration.type}
-                    className="absolute w-8 h-8 md:w-10 md:h-10 animate-scale-in pointer-events-none"
-                    style={{
-                      left: `${decoration.x}%`,
-                      top: `${decoration.y}%`,
-                      transform: 'translate(-50%, -50%)',
-                      animationDelay: `${decoration.delay}s`,
-                      animationFillMode: 'both',
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }}
-                  />
-                ))}
+                {/* Decorative elements (balloons and confetti) */}
+                {decorations.filter(d => d.type !== 'ribbon').map((decoration) => {
+                  const config = decorationConfig[decoration.type];
+                  if (!config) return null;
+
+                  const combinedStyle: CSSProperties = {
+                    ...config.style,
+                    animationDelay:
+                      decoration.delay !== undefined
+                        ? `${decoration.delay}s`
+                        : config.style?.animationDelay,
+                  };
+
+                  return (
+                    <img
+                      key={decoration.id}
+                      src={config.src}
+                      alt=""
+                      className={config.className}
+                      style={combinedStyle}
+                      loading="eager"
+                      aria-hidden="true"
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -230,11 +296,11 @@ export default function ViewGreeting() {
             )}
 
             {/* Action buttons */}
-            <div className="mt-8">
+            <div className="mt-8 flex flex-col md:flex-row gap-4 items-center justify-center">
               {cakeStage === 0 && (
                 <Button
                   onClick={decorateCake}
-                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg"
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg w-full md:w-auto"
                   disabled={decorations.length > 0}
                 >
                   {decorations.length > 0 ? '✨ Decorated!' : '🎨 Decorate'}
@@ -244,7 +310,7 @@ export default function ViewGreeting() {
               {cakeStage === 0 && decorations.length > 0 && (
                 <Button
                   onClick={() => setCakeStage(1)}
-                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg ml-4"
+                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white px-12 py-6 text-xl rounded-full shadow-lg w-full md:w-auto"
                 >
                   Next: Light Candle →
                 </Button>
