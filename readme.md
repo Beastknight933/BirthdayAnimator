@@ -1,0 +1,1 @@
+to start put :-  npm run dev
